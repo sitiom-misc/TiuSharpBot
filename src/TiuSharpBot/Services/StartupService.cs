@@ -15,17 +15,17 @@ namespace TiuSharpBot.Services
         private readonly CommandService _commands;
         private readonly IConfigurationRoot _config;
 
-        public StartupService(IServiceProvider provider, DiscordSocketClient discord, CommandService commands, IConfigurationRoot configuration)
+        public StartupService(IServiceProvider provider, DiscordSocketClient discord, CommandService commands, IConfigurationRoot config)
         {
             _provider = provider;
+            _config = config;
             _discord = discord;
             _commands = commands;
-            _config = configuration;
         }
 
         public async Task StartAsync()
         {
-            await _discord.LoginAsync(TokenType.Bot, _config["DISCORD_TOKEN"]);
+            await _discord.LoginAsync(TokenType.Bot, _config["BOT_TOKEN"]);
             await _discord.StartAsync();
             await _discord.SetGameAsync("your PBL", null, ActivityType.Watching);
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _provider);

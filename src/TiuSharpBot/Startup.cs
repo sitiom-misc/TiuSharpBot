@@ -36,6 +36,7 @@ namespace TiuSharpBot
             provider.GetRequiredService<CommandHandler>();
             await provider.GetRequiredService<StartupService>().StartAsync();
 
+            // Keep the program running
             await Task.Delay(-1);
         }
 
