@@ -36,12 +36,9 @@ namespace TiuSharpBot.Services
             int argPos = 0;
             if (msg.HasStringPrefix(_config["BOT_PREFIX"], ref argPos) || msg.HasMentionPrefix(_discord.CurrentUser, ref argPos))
             {
-                IResult result;
-
-                using (context.Channel.EnterTypingState())
-                {
-                    result = await _commands.ExecuteAsync(context, argPos, _provider);
-                }
+                var typingState = context.Channel.EnterTypingState();
+                var result = await _commands.ExecuteAsync(context, argPos, _provider);
+                typingState.Dispose();
 
                 if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
                     await context.Channel.SendMessageAsync(result.ToString());
