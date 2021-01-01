@@ -27,7 +27,7 @@ namespace TiuSharpBot.Services
         {
             await _discord.LoginAsync(TokenType.Bot, _config["BOT_TOKEN"]);
             await _discord.StartAsync();
-            await _discord.SetGameAsync(_config["BOT_PREFIX"], null, ActivityType.Listening);
+            await _discord.SetGameAsync($"{_config["BOT_PREFIX"]}help", null, ActivityType.Listening);
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _provider);
         }
     }
