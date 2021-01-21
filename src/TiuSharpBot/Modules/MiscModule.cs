@@ -48,7 +48,7 @@ namespace TiuSharpBot.Modules
         [Command("ask"), Summary("Ask a question, He answers all.")]
         public async Task Ask([Remainder][Summary("The message to ask")] string word)
         {
-            await ReplyAsync(_responses[new Random().Next(0, 19)], messageReference: Context.Message.Reference);
+            await ReplyAsync(_responses[new Random().Next(0, 19)], messageReference: new MessageReference(Context.Message.Id));
         }
 
         [Command("speak"), Summary("Speak a specified voice.")]
@@ -72,7 +72,7 @@ namespace TiuSharpBot.Modules
             string encodedAudio = (string)jObject["audio_base64"];
             MemoryStream data = new MemoryStream(Convert.FromBase64String(encodedAudio!));
 
-            await Context.Channel.SendFileAsync(data, "audio.wav", messageReference: Context.Message.Reference);
+            await Context.Channel.SendFileAsync(data, "audio.wav", messageReference: new MessageReference(Context.Message.Id));
         }
 
         [Command("talk"), Summary("Start a conversation with Sir Tiu. Conversation ends with 2 minutes of inactivity.")]
