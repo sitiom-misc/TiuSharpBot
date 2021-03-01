@@ -155,6 +155,16 @@ namespace TiuSharpBot.Modules
             }
         }
 
+        [Command("ping")]
+        [Summary("Displays the current latency of the bot.")]
+        public async Task GetLatencyAsync()
+        {
+            var message = await ReplyAsync("ℹ️ | Pong!");
+            await message.ModifyAsync(x =>
+            {
+                x.Content = $"ℹ️ | Pong! - Time taken: **{message.Timestamp - Context.Message.Timestamp:fff}ms**";
+            });
+        }
 
         [Command("face"), Summary("Generate a face from https://thispersondoesnotexist.com/")]
         public async Task ThisPersonDoesNotExists() =>
