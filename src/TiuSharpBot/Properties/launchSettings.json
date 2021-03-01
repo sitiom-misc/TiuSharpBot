@@ -3,7 +3,7 @@
     "TiuSharpBot": {
       "commandName": "Project",
       "environmentVariables": {
-        "DISCORD_TOKEN": "NzU3ODcxMjcwODYyNzgyNDY1.X2msnw._wxFFo1mWbClRaZMss2nSygZ4Q0",
+        "BOT_TOKEN": "NzU3ODcxMjcwODYyNzgyNDY1.X2msnw._wxFFo1mWbClRaZMss2nSygZ4Q0",
         "BOT_PREFIX": "tiu!"
       }
     }
