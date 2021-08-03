@@ -1,23 +1,18 @@
-﻿using System;
+﻿using Discord;
+using Discord.Addons.Interactive;
+using Discord.Commands;
+using Discord.WebSocket;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Discord;
-using Discord.Addons.Interactive;
-using Discord.Commands;
-using Discord.WebSocket;
-using Microsoft.Extensions.Configuration;
-using MitsukuApi;
 
-namespace RizalBot.Modules
+namespace TiuSharpBot.Modules
 {
     [Name("Games"), Summary("Play various games!")]
     public class GamesModule : InteractiveBase<SocketCommandContext>
     {
-        private readonly CommandService _service;
-        private readonly IConfigurationRoot _config;
-
         private readonly string[] _hangmanGraphics =
         {
             @"‎‏‏‎‎‏‏‎‎       __            __
@@ -62,16 +57,10 @@ __      |       __   <:bottom1:808148053818605568>",
 __      |       __   <:bottom2:808148053742977035>"
         };
 
-        public GamesModule(CommandService service, IConfigurationRoot config)
-        {
-            _service = service;
-            _config = config;
-        }
-
         [Command("hangman"), Summary("Play hangman. You will be asked to set the prompt and the rest will try to answer.")]
         public async Task Hangman()
         {
-            Criteria<SocketMessage> fromSourceUserDm = new Criteria<SocketMessage>();
+            Criteria<SocketMessage> fromSourceUserDm = new();
             fromSourceUserDm.AddCriterion(new EnsureSourceUserCriterion());
             fromSourceUserDm.AddCriterion(new EnsureFromChannelCriterion(await Context.User.GetOrCreateDMChannelAsync()));
 
@@ -101,7 +90,7 @@ __      |       __   <:bottom2:808148053742977035>"
             // Consistent capitalization
             string word = response.Content.ToLower();
             IUserMessage hangmanMessage = null;
-            List<char> guessedLetters = new List<char>();
+            List<char> guessedLetters = new();
             bool isWon = false;
 
             await ReplyAsync("Starting game!");
@@ -112,7 +101,7 @@ __      |       __   <:bottom2:808148053742977035>"
                 bool isAlreadyGuessed;
                 do
                 {
-                    StringBuilder message = new StringBuilder($"{hangmanGraphic}\n\n");
+                    StringBuilder message = new($"{hangmanGraphic}\n\n");
 
                     foreach (char c in word)
                     {
@@ -178,14 +167,7 @@ __      |       __   <:bottom2:808148053742977035>"
                 if (isWon) break;
             }
 
-            if (isWon)
-            {
-                await ReplyAsync($"Congratulations! You have guessed the word: `{word}`");
-            }
-            else
-            {
-                await ReplyAsync($"You lost! The word is: `{word}`");
-            }
+            await ReplyAsync(isWon ? $"Congratulations! You have guessed the word: `{word}`" : $"You lost! The word is: `{word}`");
         }
     }
 }

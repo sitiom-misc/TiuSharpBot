@@ -23,7 +23,7 @@ namespace TioSharp
 
 		public void RefreshLanguages()
 		{
-			List<string> newList = new List<string>();
+			List<string> newList = new();
 
 			JObject file = JObject.Parse(new WebClient().DownloadString(Json));
 
@@ -38,7 +38,7 @@ namespace TioSharp
 
 		public async Task RefreshLanguagesAsync()
 		{
-			List<string> newList = new List<string>();
+			List<string> newList = new();
 
 			JObject file = JObject.Parse(await new WebClient().DownloadStringTaskAsync(new Uri(Json)));
 
@@ -55,7 +55,7 @@ namespace TioSharp
 		// </summary>
 		public byte[] CreateRequestData(string language, string code, string[] inputs = null, string[] cFlags = null, string[] options = null, string[] args = null)
 		{
-			Dictionary<string, string[]> strings = new Dictionary<string, string[]> {
+			Dictionary<string, string[]> strings = new() {
 				{ "lang", new[] { language } },
 				{ ".code.tio", new[] { code } },
 				{ ".input.tio", inputs != null? new[] { string.Join('\n', inputs) } : null },
@@ -64,7 +64,7 @@ namespace TioSharp
 				{ "args", args }
  			};
 
-			List<byte> bytes = new List<byte>();
+			List<byte> bytes = new();
 
 			foreach (KeyValuePair<string, string[]> pair in strings)
 			{
@@ -79,7 +79,7 @@ namespace TioSharp
 		// </summary>
 		public async Task<string> SendAsync(byte[] requestData)
 		{
-			HttpClient client = new HttpClient();
+			HttpClient client = new();
 			HttpResponseMessage response = await client.PostAsync("https://tio.run/cgi-bin/run/api/", new ByteArrayContent(requestData));
 			response.EnsureSuccessStatusCode();
 			byte[] responseBytes = await response.Content.ReadAsByteArrayAsync();
