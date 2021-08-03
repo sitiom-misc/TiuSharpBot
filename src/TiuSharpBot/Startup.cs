@@ -1,11 +1,11 @@
-﻿using System;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Threading.Tasks;
 using TiuSharpBot.Services;
 
 namespace TiuSharpBot
@@ -43,12 +43,12 @@ namespace TiuSharpBot
         private void ConfigureServices(IServiceCollection services)
         {
             services.AddSingleton(new DiscordSocketClient(new DiscordSocketConfig
-            {                                       
+            {
                 LogLevel = LogSeverity.Verbose,
                 MessageCacheSize = 1000
             }))
             .AddSingleton(new CommandService(new CommandServiceConfig
-            {                                       
+            {
                 LogLevel = LogSeverity.Verbose,
                 DefaultRunMode = RunMode.Async
             }))

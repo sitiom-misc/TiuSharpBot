@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
-using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
@@ -27,7 +25,7 @@ namespace TiuSharpBot.Services
 
         private async Task OnMessageReceivedAsync(SocketMessage s)
         {
-            if (!(s is SocketUserMessage msg)) return;
+            if (s is not SocketUserMessage msg) return;
             if (msg.Author.Id == _discord.CurrentUser.Id) return; // Ignore self
 
             var context = new SocketCommandContext(_discord, msg);
@@ -42,14 +40,6 @@ namespace TiuSharpBot.Services
 
                 if (!result.IsSuccess && result.Error != CommandError.UnknownCommand)
                     await context.Channel.SendMessageAsync(result.ToString());
-            }
-            else if (msg.Channel is IPrivateChannel && msg.Attachments.Count > 0)
-            {
-                await msg.Channel.SendMessageAsync("Hi, your submission will be looked on by the officers now.");
-
-                // Send to iJSD Server
-                await _discord.GetGuild(756114649144885258).GetTextChannel(765938417263312898)
-                    .SendMessageAsync($"From {msg.Author.Mention}:\n{msg.Attachments.ElementAt(0).Url}");
             }
         }
     }

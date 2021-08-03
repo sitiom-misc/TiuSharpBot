@@ -1,18 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
 using MitsukuApi;
 using Newtonsoft.Json.Linq;
 using RestSharp;
-using TiuSharpBot.Models;
-using TiuSharpBot.Utils.Callbacks;
+using System;
+using System.IO;
+using System.Net;
+using System.Threading.Tasks;
 using RestClient = RestSharp.RestClient;
 
 namespace TiuSharpBot.Modules
@@ -43,19 +39,23 @@ namespace TiuSharpBot.Modules
             "Signs point to yes.",
             "Better not tell you now."
         };
-        public List<ScoreEntry> ScoreEntries;
 
         [Command("ask"), Summary("Ask a question, He answers all.")]
-        public async Task Ask([Remainder][Summary("The message to ask")] string word)
+        public async Task Ask()
         {
-            await ReplyAsync(_responses[new Random().Next(0, 19)], allowedMentions: AllowedMentions.None, messageReference: new MessageReference(Context.Message.Id));
+            if (Context.Message.Content.Replace("tiu!ask ", "") == string.Empty)
+            {
+                await ReplyAsync("You need to ask a question!", messageReference: new MessageReference(Context.Message.Id));
+            }
+
+            await ReplyAsync(_responses[new Random().Next(0, 19)], messageReference: new MessageReference(Context.Message.Id));
         }
 
         [Command("speak"), Summary("Speak a specified voice.")]
         public async Task VoCodeSpeak(string speaker, string message)
         {
-            RestClient client = new RestClient("https://mumble.stream/speak_spectrogram");
-            RestRequest request = new RestRequest(Method.POST)
+            RestClient client = new("https://mumble.stream/speak_spectrogram");
+            RestRequest request = new(Method.POST)
             {
                 RequestFormat = DataFormat.Json
             };
@@ -69,15 +69,15 @@ namespace TiuSharpBot.Modules
 
             JObject jObject = JObject.Parse(response.Content);
             string encodedAudio = (string)jObject["audio_base64"];
-            MemoryStream data = new MemoryStream(Convert.FromBase64String(encodedAudio!));
+            MemoryStream data = new(Convert.FromBase64String(encodedAudio!));
 
-            await Context.Channel.SendFileAsync(data, "audio.wav", allowedMentions: AllowedMentions.None, messageReference: new MessageReference(Context.Message.Id));
+            await Context.Channel.SendFileAsync(data, "audio.wav", messageReference: new MessageReference(Context.Message.Id));
         }
 
         [Command("talk"), Summary("Start a conversation with Sir Tiu. Conversation ends with 2 minutes of inactivity.")]
         public async Task Talk([Remainder] string message)
         {
-            MitsukuChatBot mitsuku = new MitsukuChatBot();
+            MitsukuChatBot mitsuku = new();
             MitsukuResponse reply = await mitsuku.SendMessageAsync(message);
 
             foreach (string msg in reply.Responses)
@@ -104,57 +104,6 @@ namespace TiuSharpBot.Modules
             } while (true);
         }
 
-        [Command("leaderboard"), Summary("Set up a dream.lo leaderboard to track")]
-        [RequireUserPermission(GuildPermission.ManageChannels)]
-        public async Task Leaderboard([Summary("The public code of the dream.lo leaderboard")] string publicCode)
-        {
-            string uri = $"http://dreamlo.com/lb/{publicCode}/json-asc";
-
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
-            using HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-            await using Stream stream = response.GetResponseStream();
-            try
-            {
-                //Deserialize Result
-                JObject leaderboard = JObject.Parse(await new StreamReader(stream).ReadToEndAsync());
-
-                List<JToken> results = leaderboard["dreamlo"]?["leaderboard"]?["entry"]?.Children()
-                    .ToList();
-                ScoreEntries = (results ?? throw new InvalidOperationException())
-                    .Select(result => result.ToObject<ScoreEntry>()).Take(10).ToList();
-
-                EmbedBuilder builder = new EmbedBuilder
-                {
-                    Title = "🏆 Labyrinth Top 10 Leaderboards",
-                    Color = new Color(179, 10, 14),
-                    ThumbnailUrl = "https://cdn.discordapp.com/app-icons/770277582460551178/99850e049466bf1ed9370e3eed73ed00.png",
-                    Footer = new EmbedFooterBuilder
-                    {
-                        Text = "Note: Changing your discord name (not server nickname) may result in your discord tag not showing in the Leaderboard"
-                    },
-                    Description = "__**Rankings:**__\n"
-                };
-
-                string[] topTenEmojis = { "🥇", "🥈", "🥉", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟" };
-                for (var i = 0; i < ScoreEntries.Count; i++)
-                {
-                    ScoreEntry scoreEntry = ScoreEntries[i];
-                    string username = scoreEntry.Name.Split('#')[0];
-                    string discriminator = scoreEntry.Name.Split('#')[1];
-                    builder.Description +=
-                        $"{topTenEmojis[i]} - {Context.Client.GetUser(username, discriminator)?.Mention ?? $"@{username}#{discriminator}"} - 🔹 **`{scoreEntry.Score} points`**\n\n";
-                }
-
-                var message = await ReplyAsync(null, false, builder.Build());
-                await ReplyAsync($"Leaderboard set to track on {MentionUtils.MentionChannel(Context.Channel.Id)}!");
-                await new LeaderboardReactionCallback(Interactive, Context, message, ScoreEntries, uri).StartAsync();
-            }
-            catch
-            {
-                await ReplyAsync("Invalid dream.lo leaderboard code.");
-            }
-        }
-
         [Command("ping")]
         [Summary("Displays the current latency of the bot.")]
         public async Task GetLatencyAsync()
@@ -173,11 +122,10 @@ namespace TiuSharpBot.Modules
                 {
                     Headers =
                     {
-						// you need to fake a HttpRequestHeader so the site let you download the image.
-						[HttpRequestHeader.UserAgent] =
+                        [HttpRequestHeader.UserAgent] =
                             "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.2 (KHTML, like Gecko) Chrome/15.0.874.121 Safari/535.2"
                     }
                 }.DownloadData("https://thispersondoesnotexist.com/image")), "face.jpg",
-                Context.Message.Author.Mention);
+                messageReference: new MessageReference(Context.Message.Id));
     }
 }
