@@ -41,13 +41,8 @@ namespace TiuSharpBot.Modules
         };
 
         [Command("ask"), Summary("Ask a question, He answers all.")]
-        public async Task Ask()
+        public async Task Ask([Remainder][Summary("The question")] string question)
         {
-            if (Context.Message.Content.Replace("tiu!ask ", "") == string.Empty)
-            {
-                await ReplyAsync("You need to ask a question!", messageReference: new MessageReference(Context.Message.Id));
-            }
-
             await ReplyAsync(_responses[new Random().Next(0, 19)], messageReference: new MessageReference(Context.Message.Id));
         }
 
