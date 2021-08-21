@@ -110,6 +110,13 @@ namespace TiuSharpBot.Modules
             });
         }
 
+        [Command("signofthecross")]
+        [Summary("Sacramental in the Church of Tiu.")]
+        public async Task SignOfTheCross()
+        {
+            await ReplyAsync("In the name of .Where(), .Select(), and .Aggregate(). Amen!", messageReference: new MessageReference(Context.Message.Id));
+        }
+
         [Command("face"), Summary("Generate a face from https://thispersondoesnotexist.com/")]
         public async Task ThisPersonDoesNotExists() =>
             await Context.Channel.SendFileAsync(
