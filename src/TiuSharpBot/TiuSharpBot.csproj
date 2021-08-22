@@ -15,12 +15,14 @@
     <PackageReference Include="YamlDotNet" Version="11.2.1" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MitsukuApi\MitsukuApi.csproj" />
     <ProjectReference Include="..\TioSharp\TioSharp.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="default_langs.yml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
   </ItemGroup>
 </Project>

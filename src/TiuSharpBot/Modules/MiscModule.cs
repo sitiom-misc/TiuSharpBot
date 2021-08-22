@@ -1,8 +1,6 @@
 ﻿using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
-using Discord.WebSocket;
-using MitsukuApi;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
@@ -67,36 +65,6 @@ namespace TiuSharpBot.Modules
             MemoryStream data = new(Convert.FromBase64String(encodedAudio!));
 
             await Context.Channel.SendFileAsync(data, "audio.wav", messageReference: new MessageReference(Context.Message.Id));
-        }
-
-        [Command("talk"), Summary("Start a conversation with Sir Tiu. Conversation ends with 2 minutes of inactivity.")]
-        public async Task Talk([Remainder] string message)
-        {
-            MitsukuChatBot mitsuku = new();
-            MitsukuResponse reply = await mitsuku.SendMessageAsync(message);
-
-            foreach (string msg in reply.Responses)
-            {
-                await ReplyAsync(msg);
-            }
-
-            do
-            {
-                SocketMessage response = await NextMessageAsync(true, true, TimeSpan.FromMinutes(1.5));
-
-                if (response != null)
-                {
-                    using var typingState = Context.Channel.EnterTypingState();
-                    reply = await mitsuku.SendMessageAsync(response.Content);
-
-                    foreach (string msg in reply.Responses)
-                    {
-                        await ReplyAsync(msg);
-                    }
-                }
-                else
-                    break;
-            } while (true);
         }
 
         [Command("ping")]
