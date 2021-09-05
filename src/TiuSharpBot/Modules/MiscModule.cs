@@ -1,5 +1,4 @@
 ﻿using Discord;
-using Discord.Addons.Interactive;
 using Discord.Commands;
 using Newtonsoft.Json.Linq;
 using RestSharp;
@@ -12,7 +11,7 @@ using RestClient = RestSharp.RestClient;
 namespace TiuSharpBot.Modules
 {
     [Name("Misc"), Summary("Miscellaneous stuff")]
-    public class MiscModule : InteractiveBase<SocketCommandContext>
+    public class MiscModule : ModuleBase<SocketCommandContext>
     {
         private readonly string[] _responses =
         {

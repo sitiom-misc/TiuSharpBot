@@ -1,7 +1,9 @@
 ﻿using Discord;
-using Discord.Addons.Interactive;
 using Discord.Commands;
+using Discord.WebSocket;
 using F23.StringSimilarity;
+using Fergun.Interactive;
+using Fergun.Interactive.Pagination;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -10,15 +12,15 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using TioSharp;
-using TiuSharpBot.Utils.Callbacks;
 
 namespace TiuSharpBot.Modules
 {
     [Name("Programming"), Summary("Tools for the programmer")]
-    public class ProgrammingModule : InteractiveBase<SocketCommandContext>
+    public class ProgrammingModule : ModuleBase<SocketCommandContext>
     {
         private static readonly TioApi Compiler = new();
         private readonly IConfigurationRoot _config;
+        public InteractiveService Interactive { get; set; }
 
         // Common identifiers, also used in highlight.js and thus discord code blocks
         private readonly Dictionary<string, string> _quickMap = new()
@@ -111,7 +113,7 @@ tiu!run <language> [--stats]
             List<string> commandLineOptions = new();
             List<string> arguments = new();
 
-            Attachment file = Context.Message.Attachments.ElementAtOrDefault(0);
+            var file = Context.Message.Attachments.ElementAtOrDefault(0);
             if (file != null)
             {
                 if (file.Size > 20000)
@@ -198,8 +200,92 @@ tiu!run <language> [--stats]
                 return;
             }
 
+            var result = await CreateRunResponse(language, code, inputs.ToArray(), compilerFlags.ToArray(), args.ToArray(),
+                showStats);
+
+            var builder = new ComponentBuilder()
+                .WithButton("Run Again", "tiu_run_again", ButtonStyle.Secondary, new Emoji("🔄"))
+                .WithButton("Delete", "tiu_run_delete", ButtonStyle.Secondary, new Emoji("🗑"));
+            var messageResult = await Context.Channel.SendMessageAsync(result, component: builder.Build(), messageReference: new MessageReference(Context.Message.Id));
+
+            // Message result interaction loop
+            while (true)
+            {
+                var nextInteraction = await Interactive.NextInteractionAsync(
+                    x => x is SocketMessageComponent c && c.Message.Id == messageResult.Id && c.User.Id == Context.User.Id,
+                    timeout: TimeSpan.FromMinutes(1));
+
+                if (nextInteraction == null) return;
+
+                switch (nextInteraction.Status)
+                {
+                    case InteractiveStatus.Success:
+                        var customId = ((SocketMessageComponent)nextInteraction.Value).Data.CustomId;
+                        switch (customId)
+                        {
+                            case "tiu_run_again":
+                                result = await CreateRunResponse(language, code, inputs.ToArray(), compilerFlags.ToArray(),
+                                    args.ToArray(),
+                                    showStats);
+                                await messageResult.ModifyAsync(x => { x.Content = result; });
+                                break;
+                            case "tiu_run_delete":
+                                await messageResult.DeleteAsync();
+                                return;
+                        }
+                        break;
+                    case InteractiveStatus.Timeout:
+                    case InteractiveStatus.Canceled:
+                        // Remove components from message
+                        await messageResult.ModifyAsync(x => { x.Components = new ComponentBuilder().Build(); });
+                        return;
+                    default:
+                        return;
+                }
+            }
+        }
+
+        [Command("lang", RunMode = RunMode.Async), Summary("Returns a list of available languages from tio.run")]
+        public async Task ListLanguages()
+        {
+            await Compiler.RefreshLanguagesAsync();
+            var pageContents = Compiler.Languages
+                .Select((s, i) => new { Value = $"{i + 1}. {s}", Index = i })
+                .GroupBy(x => x.Index / 10)
+                .Select(grp => string.Join('\n', grp.Select(x => x.Value)))
+                .ToArray();
+
+            var paginator = new LazyPaginatorBuilder()
+                .AddUser(Context.User)
+                .WithPageFactory(GeneratePageAsync)
+                .WithMaxPageIndex(pageContents.Length)
+                .Build();
+
+            var message = await Interactive.SendPaginatorAsync(paginator, Context.Channel, TimeSpan.FromMinutes(1), resetTimeoutOnInput: true);
+
+            // Remove the paginator buttons
+            await message.Message.ModifyAsync(x => { x.Components = new ComponentBuilder().Build(); });
+
+            Task<PageBuilder> GeneratePageAsync(int index)
+            {
+                var page = new PageBuilder()
+                    .WithTitle("Languages List")
+                    .WithColor(new Color(55, 129, 255))
+                    .WithDescription(
+                        $"{pageContents[index]}\n\nView them on [tio.run](https://tio.run/), or in [JSON format](https://tio.run/languages.json)")
+                    .WithAuthor(
+                        "tio.run",
+                        "https://avatars.githubusercontent.com/u/24327566",
+                        "https://tio.run/");
+
+                return Task.FromResult(page);
+            }
+        }
+
+        private static async Task<string> CreateRunResponse(string language, string code, string[] inputs, string[] compilerFlags, string[] args, bool showStats)
+        {
             // Create and send response
-            byte[] requestData = Compiler.CreateRequestData(language, code, inputs.ToArray(), compilerFlags.ToArray(), arguments.ToArray());
+            byte[] requestData = Compiler.CreateRequestData(language, code, inputs, compilerFlags, args);
             string response = await Compiler.SendAsync(requestData);
 
             string result;
@@ -216,31 +302,7 @@ tiu!run <language> [--stats]
                 result = $"```\n{output}\n```";
             }
 
-            await new WasteBasketReactionCallback(Interactive, Context, await ReplyAsync(result), TimeSpan.FromMinutes(1)).StartAsync();
-        }
-
-        [Command("lang", RunMode = RunMode.Async), Summary("Returns a list of available languages from tio.run")]
-        public async Task ListLanguages()
-        {
-            PaginatedMessage paginatedMessage = new()
-            {
-                Title = "Languages List",
-                Color = new Color(55, 129, 255),
-                Pages = Compiler.Languages
-                    .Select((s, i) => new { Value = s, Index = i })
-                    .GroupBy(x => x.Index / 10)
-                    .Select(grp => string.Join('\n', grp.Select(x => x.Value)))
-                    .ToArray(),
-                Options = new PaginatedAppearanceOptions { DisplayInformationIcon = false, Timeout = TimeSpan.FromMinutes(5) },
-                Author = new EmbedAuthorBuilder
-                {
-                    IconUrl = "https://raw.githubusercontent.com/TryItOnline/tryitonline/master/usr/share/tio.run/mstile-310x310.png",
-                    Name = "tio.run",
-                    Url = "http://tio.run/"
-                }
-            };
-            await PagedReplyAsync(paginatedMessage);
-            await Compiler.RefreshLanguagesAsync();
+            return result;
         }
     }
 }

@@ -1,11 +1,11 @@
 ﻿using Discord;
-using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Threading.Tasks;
+using Fergun.Interactive;
 using TiuSharpBot.Services;
 
 namespace TiuSharpBot

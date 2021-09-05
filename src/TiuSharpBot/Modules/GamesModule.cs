@@ -1,7 +1,7 @@
 ﻿using Discord;
-using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
+using Fergun.Interactive;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace TiuSharpBot.Modules
 {
     [Name("Games"), Summary("Play various games!")]
-    public class GamesModule : InteractiveBase<SocketCommandContext>
+    public class GamesModule : ModuleBase<SocketCommandContext>
     {
         private readonly string[] _hangmanGraphics =
         {
@@ -57,29 +57,30 @@ __      |       __   <:bottom1:808148053818605568>",
 __      |       __   <:bottom2:808148053742977035>"
         };
 
+        public InteractiveService Interactive { get; set; }
+
         [Command("hangman"), Summary("Play hangman. You will be asked to set the prompt and the rest will try to answer.")]
         public async Task Hangman()
         {
-            Criteria<SocketMessage> fromSourceUserDm = new();
-            fromSourceUserDm.AddCriterion(new EnsureSourceUserCriterion());
-            fromSourceUserDm.AddCriterion(new EnsureFromChannelCriterion(await Context.User.CreateDMChannelAsync()));
+            IDMChannel dmChannel = await Context.User.CreateDMChannelAsync();
+            bool FromSourceUserDmCriteria(SocketMessage message) => message.Author.Id == Context.User.Id && message.Channel.Id == dmChannel.Id;
 
             await ReplyAsync($"Waiting for {Context.User.Mention} to set the prompt...");
             await Context.User.SendMessageAsync("Enter the prompt.");
-            SocketMessage response = await NextMessageAsync(fromSourceUserDm, TimeSpan.FromMinutes(1));
-            if (response is null)
+            var response = await Interactive.NextMessageAsync(FromSourceUserDmCriteria, timeout: TimeSpan.FromMinutes(1));
+            if (response.IsTimeout)
             {
                 await Context.User.SendMessageAsync("Timed out.");
                 await ReplyAsync("Timed out.");
                 return;
             }
             // Check if message only contains letters and spaces
-            while (!response.Content.All(c =>
+            while (!response.Value.Content.All(c =>
                 char.IsLetter(c) || c == ' '))
             {
                 await Context.User.SendMessageAsync("Your input should only contain words separated by spaces.");
-                response = await NextMessageAsync(fromSourceUserDm, TimeSpan.FromMinutes(1));
-                if (response is not null) continue;
+                response = await Interactive.NextMessageAsync(FromSourceUserDmCriteria, timeout: TimeSpan.FromMinutes(1));
+                if (!response.IsTimeout) continue;
                 await Context.User.SendMessageAsync("Timed out.");
                 await ReplyAsync("Timed out.");
                 return;
@@ -88,7 +89,7 @@ __      |       __   <:bottom2:808148053742977035>"
 
             // Setup game variables
             // Consistent capitalization
-            string word = response.Content.ToLower();
+            string word = response.Value.Content.ToLower();
             IUserMessage hangmanMessage = null;
             List<char> guessedLetters = new();
             bool isWon = false;
@@ -142,7 +143,7 @@ __      |       __   <:bottom2:808148053742977035>"
                     SocketMessage nextMessage;
                     do
                     {
-                        nextMessage = await NextMessageAsync(false);
+                        nextMessage = (await Interactive.NextMessageAsync(msg => msg.Channel.Id == Context.Channel.Id)).Value;
                     } while (nextMessage is null ||
                              nextMessage.Content.Length != 1 && char.IsLetter(nextMessage.Content, 0));
 
