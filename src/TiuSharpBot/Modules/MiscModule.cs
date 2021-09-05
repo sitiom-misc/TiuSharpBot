@@ -67,7 +67,7 @@ namespace TiuSharpBot.Modules
         }
 
         [Command("ping")]
-        [Summary("Displays the current latency of the bot.")]
+        [Summary("Measure bot latency")]
         public async Task GetLatencyAsync()
         {
             var message = await ReplyAsync("ℹ️ | Pong!");

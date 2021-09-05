@@ -1,8 +1,8 @@
-﻿using System;
-using System.Threading.Tasks;
-using Discord.Commands;
+﻿using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
+using System;
+using System.Threading.Tasks;
 
 namespace TiuSharpBot.Services
 {
@@ -21,6 +21,32 @@ namespace TiuSharpBot.Services
             _provider = provider;
 
             _discord.MessageReceived += OnMessageReceivedAsync;
+            _discord.InteractionCreated += Client_InteractionCreated;
+        }
+
+        private async Task Client_InteractionCreated(SocketInteraction arg)
+        {
+            if (arg is SocketSlashCommand command)
+            {
+                await SlashCommandHandler(command);
+            }
+        }
+
+        private async Task SlashCommandHandler(SocketSlashCommand interaction)
+        {
+            switch (interaction.Data.Name)
+            {
+                // Only ping command as of now
+                case "ping":
+                    await interaction.RespondAsync("ℹ️ | Pong!");
+                    var responseTimestamp = (await interaction.GetOriginalResponseAsync()).CreatedAt;
+
+                    await interaction.ModifyOriginalResponseAsync(x =>
+                    {
+                        x.Content = $"ℹ️ | Pong! - Time taken: **{interaction.CreatedAt - responseTimestamp:fff}ms**";
+                    });
+                    break;
+            }
         }
 
         private async Task OnMessageReceivedAsync(SocketMessage s)
