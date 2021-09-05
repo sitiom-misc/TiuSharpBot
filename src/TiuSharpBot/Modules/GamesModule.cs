@@ -62,7 +62,7 @@ __      |       __   <:bottom2:808148053742977035>"
         {
             Criteria<SocketMessage> fromSourceUserDm = new();
             fromSourceUserDm.AddCriterion(new EnsureSourceUserCriterion());
-            fromSourceUserDm.AddCriterion(new EnsureFromChannelCriterion(await Context.User.GetOrCreateDMChannelAsync()));
+            fromSourceUserDm.AddCriterion(new EnsureFromChannelCriterion(await Context.User.CreateDMChannelAsync()));
 
             await ReplyAsync($"Waiting for {Context.User.Mention} to set the prompt...");
             await Context.User.SendMessageAsync("Enter the prompt.");
