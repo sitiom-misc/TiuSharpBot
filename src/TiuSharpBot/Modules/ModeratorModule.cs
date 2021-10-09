@@ -1,8 +1,8 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace TiuSharpBot.Modules
 {
@@ -11,7 +11,7 @@ namespace TiuSharpBot.Modules
     public class ModeratorModule : ModuleBase<SocketCommandContext>
     {
         [Command("knospecrole")]
-        [Summary("Kicks all users without a specific role.")]
+        [Summary("Kicks all users without a specific role. Does not kick users higher than the bot in the role hierarchy.")]
         [RequireUserPermission(GuildPermission.KickMembers)]
         [RequireBotPermission(GuildPermission.KickMembers)]
         public async Task KickNoSpecificRole(SocketRole role)
@@ -20,7 +20,7 @@ namespace TiuSharpBot.Modules
 
             foreach (var user in Context.Guild.Users)
             {
-                if (user.IsBot || user.Roles.All(r => r.Id != role.Id)) continue;
+                if (user.IsBot || user.Roles.Any(r => r.Id == role.Id) || user.Hierarchy > Context.Guild.CurrentUser.Hierarchy) continue;
                 await user.KickAsync();
                 kickedUsers++;
             }

@@ -45,7 +45,9 @@ namespace TiuSharpBot
             services.AddSingleton(new DiscordSocketClient(new DiscordSocketConfig
             {
                 LogLevel = LogSeverity.Verbose,
-                MessageCacheSize = 1000
+                MessageCacheSize = 1000,
+                GatewayIntents = GatewayIntents.All,
+                AlwaysDownloadUsers = true
             }))
             .AddSingleton(new CommandService(new CommandServiceConfig
             {
