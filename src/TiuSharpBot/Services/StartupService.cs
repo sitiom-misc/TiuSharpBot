@@ -36,9 +36,9 @@ namespace TiuSharpBot.Services
             {
                 await _discord.Rest.CreateGlobalCommand(pingCommand.Build());
             }
-            catch (ApplicationCommandException exception)
+            catch (HttpException exception)
             {
-                var json = JsonConvert.SerializeObject(exception.Error, Formatting.Indented);
+                var json = JsonConvert.SerializeObject(exception.Errors, Formatting.Indented);
                 Console.WriteLine(json);
             }
         }

@@ -5,7 +5,10 @@ using RestSharp;
 using System;
 using System.IO;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
+using RestSharp.Extensions;
 using RestClient = RestSharp.RestClient;
 
 namespace TiuSharpBot.Modules
@@ -85,16 +88,14 @@ namespace TiuSharpBot.Modules
         }
 
         [Command("face"), Summary("Generate a face from https://thispersondoesnotexist.com/")]
-        public async Task ThisPersonDoesNotExists() =>
-            await Context.Channel.SendFileAsync(
-                new MemoryStream(new WebClient
-                {
-                    Headers =
-                    {
-                        [HttpRequestHeader.UserAgent] =
-                            "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.2 (KHTML, like Gecko) Chrome/15.0.874.121 Safari/535.2"
-                    }
-                }.DownloadData("https://thispersondoesnotexist.com/image")), "face.jpg",
-                messageReference: new MessageReference(Context.Message.Id));
+        public async Task ThisPersonDoesNotExist()
+        {
+            var client = new HttpClient();
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.2 (KHTML, like Gecko) Chrome/15.0.874.121 Safari/535.2");
+
+            var image = await (await client.GetAsync("https://thispersondoesnotexist.com/image")).Content.ReadAsStreamAsync();
+
+            await Context.Channel.SendFileAsync(image, "face.jpg", messageReference: new MessageReference(Context.Message.Id));
+        }
     }
 }

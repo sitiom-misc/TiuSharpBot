@@ -9,7 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using TioSharp;
 
@@ -134,7 +134,7 @@ tiu!run <language> [--stats]
                 subArgs1 = args[0].Split(' ', '\r', '\n');
 
                 language = subArgs1[0];
-                code = await new WebClient().DownloadStringTaskAsync(file.Url);
+                code = await (await new HttpClient().GetAsync(file.Url)).Content.ReadAsStringAsync();
                 if (code.Length > 20000)
                 {
                     await ReplyAsync("Code must be shorter than 20,000 characters");
