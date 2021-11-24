@@ -216,6 +216,9 @@ tiu!run <language> [--stats]
                 await using var writer = new StreamWriter(resultStream);
 
                 await writer.WriteAsync(result);
+                await writer.FlushAsync();
+                resultStream.Seek(0, SeekOrigin.Begin);
+
                 messageResult = await Context.Channel.SendFileAsync(resultStream, "result.txt", component: builder.Build(),
                     messageReference: new MessageReference(Context.Message.Id));
             }
@@ -248,8 +251,9 @@ tiu!run <language> [--stats]
                                     await using var writer = new StreamWriter(resultStream);
 
                                     await writer.WriteAsync(result);
-                                    messageResult = await Context.Channel.SendFileAsync(resultStream, "result.txt", component: builder.Build(),
-                                        messageReference: new MessageReference(Context.Message.Id));
+                                    await writer.FlushAsync();
+                                    resultStream.Seek(0, SeekOrigin.Begin);
+
                                     await messageResult.ModifyAsync(x =>
                                     {
                                         x.Attachments = new Optional<IEnumerable<FileAttachment>>(new[]
