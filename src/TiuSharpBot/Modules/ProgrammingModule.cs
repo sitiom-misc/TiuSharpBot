@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
+using Discord.Rest;
 using Discord.WebSocket;
 using F23.StringSimilarity;
 using Fergun.Interactive;
@@ -206,7 +207,23 @@ tiu!run <language> [--stats]
             var builder = new ComponentBuilder()
                 .WithButton("Run Again", "tiu_run_again", ButtonStyle.Secondary, new Emoji("🔄"))
                 .WithButton("Delete", "tiu_run_delete", ButtonStyle.Secondary, new Emoji("🗑"));
-            var messageResult = await Context.Channel.SendMessageAsync(result, component: builder.Build(), messageReference: new MessageReference(Context.Message.Id));
+
+            RestUserMessage messageResult;
+            // Send result as file if it exceeds maximum message limit
+            if (result.Length > 2000 || result.Count(c => c.Equals('\n')) + 1 > 40)
+            {
+                await using var resultStream = new MemoryStream();
+                await using var writer = new StreamWriter(resultStream);
+
+                await writer.WriteAsync(result);
+                messageResult = await Context.Channel.SendFileAsync(resultStream, "result.txt", component: builder.Build(),
+                    messageReference: new MessageReference(Context.Message.Id));
+            }
+            else
+            {
+                messageResult = await Context.Channel.SendMessageAsync($"```\n{result}\n```", component: builder.Build(), messageReference: new MessageReference(Context.Message.Id));
+            }
+
 
             // Message result interaction loop
             while (true)
@@ -214,8 +231,6 @@ tiu!run <language> [--stats]
                 var nextInteraction = await Interactive.NextInteractionAsync(
                     x => x is SocketMessageComponent c && c.Message.Id == messageResult.Id && c.User.Id == Context.User.Id,
                     timeout: TimeSpan.FromMinutes(1));
-
-                if (nextInteraction == null) return;
 
                 switch (nextInteraction.Status)
                 {
@@ -227,7 +242,24 @@ tiu!run <language> [--stats]
                                 result = await CreateRunResponse(language, code, inputs.ToArray(), compilerFlags.ToArray(),
                                     args.ToArray(),
                                     showStats);
-                                await messageResult.ModifyAsync(x => { x.Content = result; });
+                                if (result.Length > 2000 || result.Count(c => c.Equals('\n')) + 1 > 40)
+                                {
+                                    await using var resultStream = new MemoryStream();
+                                    await using var writer = new StreamWriter(resultStream);
+
+                                    await writer.WriteAsync(result);
+                                    messageResult = await Context.Channel.SendFileAsync(resultStream, "result.txt", component: builder.Build(),
+                                        messageReference: new MessageReference(Context.Message.Id));
+                                    await messageResult.ModifyAsync(x =>
+                                    {
+                                        x.Attachments = new Optional<IEnumerable<FileAttachment>>(new[]
+                                            { new FileAttachment(resultStream, "result.txt") });
+                                    });
+                                }
+                                else
+                                {
+                                    await messageResult.ModifyAsync(x => { x.Content = $"```\n{result}\n```"; });
+                                }
                                 break;
                             case "tiu_run_delete":
                                 await messageResult.DeleteAsync();
@@ -286,21 +318,14 @@ tiu!run <language> [--stats]
         {
             // Create and send response
             byte[] requestData = Compiler.CreateRequestData(language, code, inputs, compilerFlags, args);
-            string response = await Compiler.SendAsync(requestData);
+            string result = await Compiler.SendAsync(requestData);
 
-            string result;
-            if (showStats)
-            {
-                result = $"```\n{response}\n```";
-            }
-            else
-            {
-                // Parse Response
-                string[] lines = response.Split('\r', '\n');
-                string output = string.Join('\n', lines
-                    .SkipLast(5)) + '\n' + lines.TakeLast(1).ElementAt(0);
-                result = $"```\n{output}\n```";
-            }
+            if (showStats) return result;
+
+            // Remove stats in result
+            string[] lines = result.Split('\r', '\n');
+            result = string.Join('\n', lines
+                .SkipLast(5)) + '\n' + lines.TakeLast(1).ElementAt(0);
 
             return result;
         }
