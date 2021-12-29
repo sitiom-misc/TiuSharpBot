@@ -219,12 +219,12 @@ tiu!run <language> [--stats]
                 await writer.FlushAsync();
                 resultStream.Seek(0, SeekOrigin.Begin);
 
-                messageResult = await Context.Channel.SendFileAsync(resultStream, "result.txt", component: builder.Build(),
+                messageResult = await Context.Channel.SendFileAsync(resultStream, "result.txt", components: builder.Build(),
                     messageReference: new MessageReference(Context.Message.Id));
             }
             else
             {
-                messageResult = await Context.Channel.SendMessageAsync($"```\n{result}\n```", component: builder.Build(), messageReference: new MessageReference(Context.Message.Id));
+                messageResult = await Context.Channel.SendMessageAsync($"```\n{result}\n```", components: builder.Build(), messageReference: new MessageReference(Context.Message.Id));
             }
 
 
