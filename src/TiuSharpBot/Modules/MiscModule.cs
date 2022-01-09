@@ -1,15 +1,8 @@
 ﻿using Discord;
 using Discord.Commands;
-using Newtonsoft.Json.Linq;
-using RestSharp;
 using System;
-using System.IO;
-using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
-using RestSharp.Extensions;
-using RestClient = RestSharp.RestClient;
 
 namespace TiuSharpBot.Modules
 {
@@ -44,29 +37,6 @@ namespace TiuSharpBot.Modules
         public async Task Ask([Remainder][Summary("The question")] string question)
         {
             await ReplyAsync(_responses[new Random().Next(0, 19)], messageReference: new MessageReference(Context.Message.Id));
-        }
-
-        [Command("speak"), Summary("Speak a specified voice.")]
-        public async Task VoCodeSpeak(string speaker, string message)
-        {
-            RestClient client = new("https://mumble.stream/speak_spectrogram");
-            RestRequest request = new(Method.POST)
-            {
-                RequestFormat = DataFormat.Json
-            };
-            request.AddDecompressionMethod(DecompressionMethods.GZip);
-            request.AddDecompressionMethod(DecompressionMethods.Deflate);
-            request.AddDecompressionMethod(DecompressionMethods.Brotli);
-
-            request.AddJsonBody($"{{\"text\":\"{message}\",\"speaker\":\"{speaker}\"}}");
-
-            IRestResponse response = await client.ExecutePostAsync(request);
-
-            JObject jObject = JObject.Parse(response.Content);
-            string encodedAudio = (string)jObject["audio_base64"];
-            MemoryStream data = new(Convert.FromBase64String(encodedAudio!));
-
-            await Context.Channel.SendFileAsync(data, "audio.wav", messageReference: new MessageReference(Context.Message.Id));
         }
 
         [Command("ping")]
