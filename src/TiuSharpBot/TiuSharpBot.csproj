@@ -16,7 +16,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
     <PackageReference Include="NetEscapades.Configuration.Yaml" Version="2.2.0" />
-    <PackageReference Include="YamlDotNet" Version="12.2.0" />
+    <PackageReference Include="YamlDotNet" Version="12.2.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\TioSharp\TioSharp\TioSharp.csproj" />
