@@ -2,7 +2,7 @@ app = "tiusharpbot"
 primary_region = "hkg"
 
 [build]
-  builder = "paketobuildpacks/builder-jammy-base"
+  builder = "paketobuildpacks/builder-jammy-base:0.4.516"
   buildpacks = ["paketo-buildpacks/dotnet-core"]
 
   [build.args]
